@@ -1,0 +1,97 @@
+import { View, Text, Image, Alert, StyleSheet } from "react-native";
+import React, { useEffect, useState } from "react";
+import { useFonts } from "expo-font";
+import { commonStyles } from "@/styles/commonStyles";
+import { splashStyles } from "@/styles/splashStyles";
+import CustomText from "@/components/shared/CustomText";
+import { useUserStore } from "@/store/userStore";
+import { getAsyncData } from "@/store/storage";
+import { jwtDecode } from "jwt-decode";
+import { resetAndNavigate } from "@/utils/Helpers";
+import { refresh_tokens } from "@/service/apiInterceptors";
+import { logout } from "@/service/authService";
+
+interface DecodedToken {
+  exp: number;
+}
+
+const Main = () => {
+  const [loaded] = useFonts({
+    Bold: require("../assets/fonts/NotoSans-Bold.ttf"),
+    Regular: require("../assets/fonts/NotoSans-Regular.ttf"),
+    Medium: require("../assets/fonts/NotoSans-Medium.ttf"),
+    Light: require("../assets/fonts/NotoSans-Light.ttf"),
+    SemiBold: require("../assets/fonts/NotoSans-SemiBold.ttf"),
+  });
+
+  const { user } = useUserStore();
+  const [hasNavigated, setHasNavigated] = useState(false);
+
+  const tokenCheck = async () => {
+    const access_token = await getAsyncData("access_token");
+    const refresh_token = await getAsyncData("refresh_token");
+
+    if (access_token) {
+      const decodedAccessToken = jwtDecode<DecodedToken>(access_token);
+      const decodedRefreshToken = jwtDecode<DecodedToken>(refresh_token);
+
+      const currentTime = Date.now() / 3000;
+
+      if (decodedRefreshToken?.exp < currentTime) {
+        logout();
+        Alert.alert("Session Expired, please login again");
+      }
+
+      if (decodedAccessToken?.exp < currentTime) {
+        try {
+          refresh_tokens();
+        } catch (err) {
+          console.log(err);
+          Alert.alert("Refresh Token Error");
+        }
+      }
+
+      if (user) {
+        resetAndNavigate("/customer/home");
+      } else {
+        resetAndNavigate("/rider/home");
+      }
+
+      return;
+    }
+
+    resetAndNavigate("/role");
+  };
+
+  useEffect(() => {
+    if (loaded && !hasNavigated) {
+      const timeoutId = setTimeout(() => {
+        tokenCheck();
+        setHasNavigated(true);
+      }, 1000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [loaded, hasNavigated]);
+
+  return (
+    <View style={commonStyles.container}>
+      <Image
+        source={require("../assets/images/logo.png")}
+        style={[splashStyles.img, styles.bigLogo]} // 👈 extra style add kiya
+        resizeMode="contain"
+      />
+      <CustomText variant="h5" fontFamily="Medium" style={splashStyles.text}>
+        Made in 🇮🇳
+      </CustomText>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  bigLogo: {
+    width: 300,  // 👈 apne requirement ke hisaab se badha sakte ho
+    height: 350,
+  },
+});
+
+export default Main;
