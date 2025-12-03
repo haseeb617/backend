@@ -46,11 +46,17 @@ export const WSProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       socket.current = io(SOCKET_URL, {
-        transports: ["websocket"],
+        transports: ["polling", "websocket"],
         withCredentials: true,
+        auth: {
+          token: socketAccessToken,
+        },
         extraHeaders: {
           access_token: socketAccessToken || "",
         },
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
       });
 
       socket.current.on("connect_error", (error) => {

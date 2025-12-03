@@ -66,7 +66,7 @@ const LiveRide = () => {
 
       on("error", (error) => {
         resetAndNavigate("/customer/home");
-        Alert.alert("Oh Dang! No Riders Found");
+        Alert.alert("Oh Dang!1 No Riders Found");
       });
     }
 
@@ -144,7 +144,7 @@ const LiveRide = () => {
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
-          <CustomText variant="h8">Fetching Information...</CustomText>
+          <CustomText variant="h8">Fetching Information....</CustomText>
           <ActivityIndicator color="black" size="small" />
         </View>
       )}
